@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Movies – CineVault</title>
+  <link rel="stylesheet" href="../css/style.css" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+</head>
+<body>
+
+<nav class="navbar">
+  <a href="../index.html" class="navbar-brand">Cine<span>Vault</span></a>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="movies.html" class="active">Movies</a>
+    <a href="watchlist.html">Watchlist</a>
+  </div>
+  <div class="nav-user" id="navUser">
+    <a href="login.html" class="btn btn-outline btn-sm">Login</a>
+    <a href="register.html" class="btn btn-primary btn-sm">Sign Up</a>
+  </div>
+</nav>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<div class="main-content">
+  <div class="container">
+    <section class="section">
+      <!-- Search + Sort -->
+      <div style="display:flex;flex-wrap:wrap;gap:1rem;align-items:center;margin-bottom:1.5rem;">
+        <div style="flex:1;min-width:240px;position:relative;">
+          <input type="text" id="searchInput" class="form-input" placeholder="Search movies..."
+            style="padding-left:2.5rem;" />
+          <i class="fas fa-search" style="position:absolute;left:0.85rem;top:50%;transform:translateY(-50%);color:var(--text-muted);"></i>
+        </div>
+        <select id="sortSelect" class="form-input" style="width:auto;">
+          <option value="rating-desc">⭐ Highest Rated</option>
+          <option value="rating-asc">Rating (Low→High)</option>
+          <option value="releaseYear-desc">Newest First</option>
+          <option value="releaseYear-asc">Oldest First</option>
+          <option value="title-asc">A–Z</option>
+          <option value="title-desc">Z–A</option>
+        </select>
+        <select id="yearSelect" class="form-input" style="width:auto;">
+          <option value="">All Years</option>
+        </select>
+        <button class="btn btn-primary" id="adminAddBtn" style="display:none" onclick="openAddModal()">
+          <i class="fas fa-plus"></i> Add Movie
+        </button>
+      </div>
+
+      <!-- Genre Chips -->
+      <div class="filter-bar" id="genreFilter"></div>
+
+      <!-- Results count -->
+      <div style="color:var(--text-muted);font-size:0.85rem;margin-bottom:1rem;" id="resultsCount"></div>
+
+      <!-- Grid -->
+      <div class="movie-grid" id="movieGrid"></div>
+
+      <!-- Pagination -->
+      <div class="pagination" id="pagination"></div>
+    </section>
+  </div>
+</div>
+
+<!-- Add/Edit Movie Modal -->
+<div class="modal-overlay" id="movieModal" style="display:none">
+  <div class="modal">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;">
+      <h2 class="modal-title" id="modalTitle" style="margin:0">Add Movie</h2>
+      <button onclick="closeModal()" style="background:none;border:none;color:var(--text-muted);font-size:1.2rem;cursor:pointer;">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+    <form id="movieForm" onsubmit="submitMovieForm(event)">
+      <div class="form-group">
+        <label class="form-label">Title *</label>
+        <input type="text" id="fTitle" class="form-input" required />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Description *</label>
+        <textarea id="fDesc" class="form-input" rows="3" required style="resize:vertical;"></textarea>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+        <div class="form-group">
+          <label class="form-label">Release Year *</label>
+          <input type="number" id="fYear" class="form-input" min="1888" max="2030" required />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Duration (min) *</label>
+          <input type="number" id="fDuration" class="form-input" required />
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Director *</label>
+        <input type="text" id="fDirector" class="form-input" required />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Cast (comma-separated)</label>
+        <input type="text" id="fCast" class="form-input" placeholder="Actor 1, Actor 2" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Genres * (comma-separated)</label>
+        <input type="text" id="fGenre" class="form-input" placeholder="Action, Sci-Fi" required />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Poster URL</label>
+        <input type="url" id="fPoster" class="form-input" />
+      </div>
+      <div style="display:flex;gap:0.75rem;justify-content:flex-end;margin-top:1rem;">
+        <button type="button" class="btn btn-outline" onclick="closeModal()">Cancel</button>
+        <button type="submit" class="btn btn-primary">Save Movie</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script src="../js/api.js"></script>
+<script src="../js/main.js"></script>
+<script src="../js/movies.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', initMoviesPage);
+</script>
+</body>
+</html>

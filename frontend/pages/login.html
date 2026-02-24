@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Login – CineVault</title>
+  <link rel="stylesheet" href="../css/style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+</head>
+<body>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<div class="auth-container">
+  <div class="auth-card">
+    <a href="../index.html" style="display:block;text-align:center;text-decoration:none;font-size:1.8rem;font-weight:800;color:var(--accent);margin-bottom:1.25rem;">
+      Cine<span style="color:white">Vault</span>
+    </a>
+    <h2 class="auth-title">Welcome back 👋</h2>
+    <p class="auth-subtitle">Login to manage your watchlist</p>
+
+    <form id="loginForm" onsubmit="handleLogin(event)">
+      <div class="form-group">
+        <label class="form-label">Email</label>
+        <input type="email" id="email" class="form-input" placeholder="you@example.com" required />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Password</label>
+        <div style="position:relative;">
+          <input type="password" id="password" class="form-input" placeholder="••••••••" required />
+          <button type="button" onclick="togglePwd('password', 'eyeIcon')"
+            style="position:absolute;right:0.85rem;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--text-muted);cursor:pointer;">
+            <i class="fas fa-eye" id="eyeIcon"></i>
+          </button>
+        </div>
+      </div>
+      <button type="submit" class="btn btn-primary" id="loginBtn" style="width:100%;justify-content:center;margin-top:0.5rem;">
+        Login
+      </button>
+    </form>
+
+    <p style="text-align:center;color:var(--text-muted);font-size:0.9rem;margin-top:1.5rem;">
+      Don't have an account?
+      <a href="register.html" style="color:var(--accent);text-decoration:none;font-weight:600;">Sign up</a>
+    </p>
+  </div>
+</div>
+
+<script src="../js/api.js"></script>
+<script src="../js/main.js"></script>
+<script>
+if (Auth.isLoggedIn()) window.location.href = '../index.html';
+
+function togglePwd(inputId, iconId) {
+  const input = document.getElementById(inputId);
+  const icon = document.getElementById(iconId);
+  if (input.type === 'password') {
+    input.type = 'text';
+    icon.className = 'fas fa-eye-slash';
+  } else {
+    input.type = 'password';
+    icon.className = 'fas fa-eye';
+  }
+}
+
+async function handleLogin(e) {
+  e.preventDefault();
+  const btn = document.getElementById('loginBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Logging in...';
+
+  try {
+    const data = await UserAPI.login({
+      email: document.getElementById('email').value,
+      password: document.getElementById('password').value,
+    });
+    Auth.login(data.token, data.user);
+    showToast(`Welcome back, ${data.user.name}! 🎬`, 'success');
+    setTimeout(() => window.location.href = '../index.html', 800);
+  } catch(e) {
+    showToast(e.message, 'error');
+    btn.disabled = false;
+    btn.innerHTML = 'Login';
+  }
+}
+</script>
+</body>
+</html>

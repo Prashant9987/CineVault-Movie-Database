@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>My Watchlist – CineVault</title>
+  <link rel="stylesheet" href="../css/style.css" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+</head>
+<body>
+
+<nav class="navbar">
+  <a href="../index.html" class="navbar-brand">Cine<span>Vault</span></a>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="movies.html">Movies</a>
+    <a href="watchlist.html" class="active">Watchlist</a>
+  </div>
+  <div class="nav-user" id="navUser"></div>
+</nav>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<div class="main-content">
+  <div class="container">
+    <section class="section">
+      <div class="section-title">
+        <i class="fas fa-bookmark" style="color:var(--accent)"></i>
+        My <span>Watchlist</span>
+      </div>
+
+      <!-- Status Tabs -->
+      <div class="filter-bar">
+        <button class="filter-chip active" onclick="filterWatchlist('', this)">All</button>
+        <button class="filter-chip" onclick="filterWatchlist('want_to_watch', this)">
+          <i class="fas fa-clock"></i> Want to Watch
+        </button>
+        <button class="filter-chip" onclick="filterWatchlist('watching', this)">
+          <i class="fas fa-play"></i> Watching
+        </button>
+        <button class="filter-chip" onclick="filterWatchlist('watched', this)">
+          <i class="fas fa-check"></i> Watched
+        </button>
+      </div>
+
+      <div id="watchlistContent"></div>
+    </section>
+  </div>
+</div>
+
+<script src="../js/api.js"></script>
+<script src="../js/main.js"></script>
+<script>
+async function initWatchlist() {
+  const user = Auth.getUser();
+  const navUser = document.getElementById('navUser');
+
+  if (!Auth.isLoggedIn()) {
+    navUser.innerHTML = `<a href="login.html" class="btn btn-primary btn-sm">Login to view watchlist</a>`;
+    document.getElementById('watchlistContent').innerHTML = `
+      <div class="empty-state">
+        <div class="icon">🔒</div>
+        <p>Please <a href="login.html" style="color:var(--accent)">login</a> to view your watchlist.</p>
+      </div>`;
+    return;
+  }
+
+  navUser.innerHTML = `
+    <span style="font-size:0.85rem;color:var(--text-secondary)">
+      <i class="fas fa-user-circle"></i> ${user.name}
+    </span>
+    <button class="btn btn-outline btn-sm" onclick="Auth.logout()">Logout</button>
+  `;
+
+  await loadWatchlist('');
+}
+
+let currentStatus = '';
+
+async function loadWatchlist(status) {
+  currentStatus = status;
+  const container = document.getElementById('watchlistContent');
+  container.innerHTML = '<div class="spinner"></div>';
+
+  try {
+    const list = await WatchlistAPI.getAll(status || undefined);
+    if (!list.length) {
+      container.innerHTML = `
+        <div class="empty-state">
+          <div class="icon">📽️</div>
+          <p>Your watchlist is empty. <a href="movies.html" style="color:var(--accent)">Browse movies</a> to add some!</p>
+        </div>`;
+      return;
+    }
+
+    container.innerHTML = `<div class="watchlist-grid">${list.map(buildWatchlistCard).join('')}</div>`;
+  } catch(e) {
+    container.innerHTML = `<p style="color:var(--accent)">Failed to load watchlist.</p>`;
+  }
+}
+
+function buildWatchlistCard(entry) {
+  const m = entry.movie;
+  const poster = m.posterUrl || 'https://via.placeholder.com/56x80/1a1a2e/666?text=🎬';
+  const statusMap = {
+    want_to_watch: ['status-want', 'Want to Watch'],
+    watching: ['status-watching', 'Watching'],
+    watched: ['status-watched', 'Watched'],
+  };
+  const [cls, label] = statusMap[entry.status] || statusMap.want_to_watch;
+
+  return `
+    <div class="watchlist-card" id="wcard-${entry._id}">
+      <img class="watchlist-poster" src="${poster}" alt="${m.title}"
+        onerror="this.src='https://via.placeholder.com/56x80/1a1a2e/666?text=🎬'" />
+      <div class="watchlist-info">
+        <div class="watchlist-title">${m.title}</div>
+        <div class="watchlist-meta">${m.releaseYear} • ${(m.genre||[]).slice(0,2).join(', ')}</div>
+        ${entry.notes ? `<div style="font-size:0.8rem;color:var(--text-muted);margin-top:0.25rem;font-style:italic">"${entry.notes}"</div>` : ''}
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:0.6rem;margin-left:auto;">
+        <span class="status-badge ${cls}">${label}</span>
+        <div style="display:flex;gap:0.4rem;">
+          <select class="form-input" style="padding:0.3rem 0.5rem;font-size:0.78rem;width:auto;"
+            onchange="updateStatus('${entry._id}', this.value)">
+            <option value="want_to_watch" ${entry.status==='want_to_watch'?'selected':''}>Want to Watch</option>
+            <option value="watching" ${entry.status==='watching'?'selected':''}>Watching</option>
+            <option value="watched" ${entry.status==='watched'?'selected':''}>Watched</option>
+          </select>
+          <button class="btn btn-danger btn-sm" onclick="removeEntry('${entry._id}')">
+            <i class="fas fa-trash"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+async function updateStatus(id, status) {
+  try {
+    await WatchlistAPI.update(id, { status });
+    showToast('Status updated!', 'success');
+    await loadWatchlist(currentStatus);
+  } catch(e) { showToast(e.message, 'error'); }
+}
+
+async function removeEntry(id) {
+  if (!confirm('Remove from watchlist?')) return;
+  try {
+    await WatchlistAPI.remove(id);
+    showToast('Removed from watchlist', 'info');
+    await loadWatchlist(currentStatus);
+  } catch(e) { showToast(e.message, 'error'); }
+}
+
+function filterWatchlist(status, btn) {
+  document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+  btn.classList.add('active');
+  loadWatchlist(status);
+}
+
+document.addEventListener('DOMContentLoaded', initWatchlist);
+</script>
+</body>
+</html>

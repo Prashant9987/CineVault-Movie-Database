@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CineVault – Movie Database</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+</head>
+<body>
+
+<!-- Navbar -->
+<nav class="navbar">
+  <a href="index.html" class="navbar-brand">Cine<span>Vault</span></a>
+  <div class="nav-links">
+    <a href="index.html" class="active">Home</a>
+    <a href="pages/movies.html">Movies</a>
+    <a href="pages/watchlist.html">Watchlist</a>
+  </div>
+  <div class="nav-user" id="navUser">
+    <a href="pages/login.html" class="btn btn-outline btn-sm">Login</a>
+    <a href="pages/register.html" class="btn btn-primary btn-sm">Sign Up</a>
+  </div>
+</nav>
+
+<!-- Toast -->
+<div class="toast-container" id="toastContainer"></div>
+
+<!-- Hero -->
+<div class="main-content">
+  <section class="hero">
+    <h1 class="hero-title">Discover Your Next<br/>Favorite Movie 🎬</h1>
+    <p class="hero-subtitle">Explore thousands of movies, build your watchlist, and rate what you love.</p>
+    <div class="hero-search">
+      <input type="text" id="heroSearch" placeholder="Search movies, directors, genres..." />
+      <button class="btn btn-primary" onclick="handleHeroSearch()">
+        <i class="fas fa-search"></i> Search
+      </button>
+    </div>
+  </section>
+
+  <!-- Genre Filter -->
+  <div class="container">
+    <section class="section">
+      <div class="filter-bar" id="genreFilter"></div>
+
+      <!-- Top Rated -->
+      <div class="section-title">
+        <i class="fas fa-star" style="color:var(--gold)"></i>
+        Top <span>Rated</span> Movies
+      </div>
+      <div class="movie-grid" id="topRatedGrid"></div>
+
+      <!-- Recent -->
+      <div class="section-title" style="margin-top:3rem">
+        <i class="fas fa-clock" style="color:var(--accent)"></i>
+        Recently <span>Added</span>
+      </div>
+      <div class="movie-grid" id="recentGrid"></div>
+    </section>
+  </div>
+</div>
+
+<script src="js/api.js"></script>
+<script src="js/main.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', initHome);
+</script>
+</body>
+</html>

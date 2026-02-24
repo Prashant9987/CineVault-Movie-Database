@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Movie Detail – CineVault</title>
+  <link rel="stylesheet" href="../css/style.css" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+</head>
+<body>
+
+<nav class="navbar">
+  <a href="../index.html" class="navbar-brand">Cine<span>Vault</span></a>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="movies.html">Movies</a>
+    <a href="watchlist.html">Watchlist</a>
+  </div>
+  <div class="nav-user" id="navUser">
+    <a href="login.html" class="btn btn-outline btn-sm">Login</a>
+    <a href="register.html" class="btn btn-primary btn-sm">Sign Up</a>
+  </div>
+</nav>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<div class="main-content">
+  <div id="loadingState" style="padding:6rem;text-align:center">
+    <div class="spinner"></div>
+  </div>
+
+  <div id="movieDetail" style="display:none">
+    <!-- Detail Hero -->
+    <div class="movie-detail-hero" id="detailHero">
+      <img id="detailBg" class="movie-detail-bg" src="" alt="" />
+      <div class="movie-detail-content">
+        <img id="detailPoster" class="movie-detail-poster" src="" alt=""
+          onerror="this.src='https://via.placeholder.com/220x330/1a1a2e/666?text=No+Poster'" />
+        <div class="movie-detail-info">
+          <div style="display:flex;flex-wrap:wrap;gap:0.5rem;margin-bottom:0.75rem;" id="detailGenres"></div>
+          <h1 class="movie-detail-title" id="detailTitle"></h1>
+          <div class="movie-meta-row" id="detailMeta"></div>
+          <p class="movie-description" id="detailDesc"></p>
+
+          <!-- Rating -->
+          <div id="ratingSection">
+            <div style="display:flex;align-items:center;gap:1rem;margin:0.5rem 0;">
+              <div style="display:flex;align-items:center;gap:0.5rem;">
+                <i class="fas fa-star" style="color:var(--gold);font-size:1.3rem;"></i>
+                <span id="detailRating" style="font-size:1.8rem;font-weight:800;"></span>
+                <span id="detailRatingCount" style="color:var(--text-muted);font-size:0.9rem;"></span>
+              </div>
+            </div>
+            <div id="userRatingSection" style="display:none;">
+              <p style="color:var(--text-secondary);font-size:0.9rem;margin-bottom:0.4rem;">Rate this movie:</p>
+              <div class="star-rating" id="starRating"></div>
+            </div>
+          </div>
+
+          <!-- Actions -->
+          <div style="display:flex;flex-wrap:wrap;gap:0.75rem;margin-top:1.5rem;" id="actionButtons">
+            <button class="btn btn-primary" onclick="addToWatchlist()">
+              <i class="fas fa-bookmark"></i> Add to Watchlist
+            </button>
+            <a href="movies.html" class="btn btn-outline">
+              <i class="fas fa-arrow-left"></i> Back to Movies
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Cast -->
+    <div class="container">
+      <section class="section">
+        <div class="section-title"><i class="fas fa-users" style="color:var(--accent)"></i> <span>Cast</span></div>
+        <div id="castList" style="display:flex;flex-wrap:wrap;gap:0.6rem;"></div>
+      </section>
+    </div>
+  </div>
+
+  <div id="errorState" style="display:none;padding:4rem;text-align:center;color:var(--accent)">
+    <div style="font-size:3rem">😕</div>
+    <p>Movie not found.</p>
+    <a href="movies.html" class="btn btn-primary" style="margin-top:1rem">Back to Movies</a>
+  </div>
+</div>
+
+<script src="../js/api.js"></script>
+<script src="../js/main.js"></script>
+<script>
+const urlParams = new URLSearchParams(window.location.search);
+const movieId = urlParams.get('id');
+let selectedRating = 0;
+
+async function initDetail() {
+  updateNavbar();
+  if (!movieId) { showError(); return; }
+  try {
+    const movie = await MovieAPI.getById(movieId);
+    renderMovie(movie);
+
+    if (Auth.isLoggedIn()) {
+      document.getElementById('userRatingSection').style.display = 'block';
+      buildStarRating();
+    }
+  } catch(e) { showError(); }
+}
+
+function renderMovie(movie) {
+  document.title = `${movie.title} – CineVault`;
+  document.getElementById('loadingState').style.display = 'none';
+  document.getElementById('movieDetail').style.display = 'block';
+
+  const poster = movie.posterUrl || 'https://via.placeholder.com/220x330/1a1a2e/666?text=No+Poster';
+  document.getElementById('detailPoster').src = poster;
+  document.getElementById('detailBg').src = poster;
+  document.getElementById('detailTitle').textContent = movie.title;
+  document.getElementById('detailDesc').textContent = movie.description;
+  document.getElementById('detailRating').textContent = movie.rating?.toFixed(1) || '—';
+  document.getElementById('detailRatingCount').textContent = `(${movie.ratingCount || 0} ratings)`;
+
+  document.getElementById('detailGenres').innerHTML = (movie.genre || []).map(g =>
+    `<span class="genre-tag" style="font-size:0.8rem">${g}</span>`
+  ).join('');
+
+  document.getElementById('detailMeta').innerHTML = `
+    <span class="meta-item"><i class="fas fa-calendar"></i> ${movie.releaseYear}</span>
+    <span class="meta-item"><i class="fas fa-clock"></i> ${Math.floor(movie.duration/60)}h ${movie.duration%60}m</span>
+    <span class="meta-item"><i class="fas fa-film"></i> ${movie.director}</span>
+    <span class="meta-item"><i class="fas fa-globe"></i> ${movie.language || 'English'}</span>
+  `;
+
+  document.getElementById('castList').innerHTML = (movie.cast || []).map(c =>
+    `<span style="background:var(--bg-card);border:1px solid var(--border);padding:0.35rem 0.85rem;border-radius:20px;font-size:0.85rem;">${c}</span>`
+  ).join('') || '<p style="color:var(--text-muted)">Cast not available</p>';
+}
+
+function buildStarRating() {
+  const container = document.getElementById('starRating');
+  container.innerHTML = '';
+  for (let i = 1; i <= 10; i++) {
+    const star = document.createElement('span');
+    star.className = 'star';
+    star.textContent = '★';
+    star.dataset.val = i;
+    star.title = `${i}/10`;
+    star.onmouseover = () => highlightStars(i);
+    star.onmouseout = () => highlightStars(selectedRating);
+    star.onclick = () => submitRating(i);
+    container.appendChild(star);
+  }
+}
+
+function highlightStars(n) {
+  document.querySelectorAll('.star').forEach((s, i) => {
+    s.classList.toggle('active', i < n);
+  });
+}
+
+async function submitRating(rating) {
+  selectedRating = rating;
+  highlightStars(rating);
+  try {
+    const res = await MovieAPI.rate(movieId, rating);
+    document.getElementById('detailRating').textContent = res.newRating.toFixed(1);
+    showToast(`Rated ${rating}/10 ⭐`, 'success');
+  } catch(e) { showToast(e.message, 'error'); }
+}
+
+async function addToWatchlist() {
+  if (!Auth.isLoggedIn()) {
+    showToast('Please login to add to watchlist', 'info');
+    setTimeout(() => window.location.href = 'login.html', 1200);
+    return;
+  }
+  try {
+    await WatchlistAPI.add(movieId);
+    showToast('Added to watchlist! 🎬', 'success');
+  } catch(e) { showToast(e.message || 'Already in watchlist', 'info'); }
+}
+
+function showError() {
+  document.getElementById('loadingState').style.display = 'none';
+  document.getElementById('errorState').style.display = 'block';
+}
+
+document.addEventListener('DOMContentLoaded', initDetail);
+</script>
+</body>
+</html>
